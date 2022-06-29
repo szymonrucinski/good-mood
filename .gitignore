@@ -2,3 +2,9 @@
 /.ipynb_checkpoints/
 *.csv
 .DS_Store
+*.wav
+*.csv
+*.pt
+*.ckpt
+*.pyc
+*.pytorchtools
