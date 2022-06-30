@@ -30,7 +30,7 @@ COPY utils/ /visium_task/utils
 # COPY custom_start.sh /visium_task/custom_start.sh
 # RUN chmod 777 /visium_task/custom_start.sh
 
-COPY requirements.txt /visium_task/requirements.txt
+COPY hist.yml /visium_task/hist.yml
 COPY Report_SER.ipynb /visium_task/Report_SER.ipynb
 
 RUN curl http://emodb.bilderbar.info/download/download.zip -O
@@ -39,6 +39,12 @@ RUN unzip download.zip -d ./test_dataset/
 
 RUN conda update conda
 RUN conda env create -f hist.yml
+RUN conda init
+RUN activate ml
+RUN conda install ipykernel
+# SHELL ["conda","run","-n","ml","/bin/bash","-c"]
+RUN python -m ipykernel install --name ml --display-name "ml"
+
 # RUN conda activate ml
 
 # RUN conda install pip
@@ -49,9 +55,10 @@ RUN conda env create -f hist.yml
 # RUN pip install -r requirements.txt
 # cleanup
 # RUN rm Miniconda3-latest-Linux-x86_64.sh
-
+SHELL ["conda", "run", "-n", "ml", "/bin/bash", "-c"]
 EXPOSE 8888
+ENTRYPOINT ["jupyter", "notebook", "--no-browser","--ip=0.0.0.0","--NotebookApp.token=''","--NotebookApp.password=''","--allow-root"]
+
 # start the jupyter notebook in server mode
 
-ENTRYPOINT ["jupyter", "notebook", "--no-browser","--ip=0.0.0.0","--NotebookApp.token=''","--NotebookApp.password=''","--allow-root"]
 # CMD bash -C '/visium_task/custom_start.sh';'bash'
