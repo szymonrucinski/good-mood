@@ -1,0 +1,17 @@
+conda install pandas
+conda install scikit-learn
+conda install -c conda-forge matplotlib
+conda install scipy
+conda install scikit-image
+conda install librosa
+conda install numpy
+conda install numba==0.53
+conda install flask
+conda install requests
+conda install cffi
+conda install pydub
+conda install seaborn
+conda install moviepy
+conda install torchvision
+conda install torch
+conda install torchmetrics

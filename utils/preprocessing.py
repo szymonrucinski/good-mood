@@ -2,9 +2,17 @@ import librosa.display
 from matplotlib import pyplot as plt
 import numpy as np
 import matplotlib
+import json
 
 # MacPlot error fix
 matplotlib.use("Agg")
+
+
+def label_encoder_to_json(label_encoder, file_path):
+    mapping = dict(zip(range(len(label_encoder.classes_)), label_encoder.classes_))
+    file = open(file_path, "w")
+    json.dump(mapping, file)
+    file.close()
 
 
 def plot_mel(audio, rate):

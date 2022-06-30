@@ -57,7 +57,7 @@ def error_analysis(test_loader, model, label_encoder, device):
             dim=1, keepdim=True
         )  # pred will be a 2d tensor of shape [batch_size,1]
 
-        preds.append(pred.flatten().numpy())
+        preds.append(pred.flatten().to("cpu").numpy())
         true_labels.append(labels.flatten().numpy())
 
     #### GET MISIDENTIFIED EXAMPLE
