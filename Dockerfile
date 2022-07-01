@@ -23,6 +23,8 @@ RUN wget https://filedn.eu/lJe8HQehDK0jkgvBcE4bDl8/model.pt
 
 COPY environment.yml /visium_task/environment.yml
 COPY Report_SER.ipynb /visium_task/Report_SER.ipynb
+COPY labels.json /visium_task/labels.json
+
 
 RUN wget http://emodb.bilderbar.info/download/download.zip
 RUN unzip download.zip -d ./dataset/
