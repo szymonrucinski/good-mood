@@ -17,7 +17,11 @@ dependencies:
   - pydub
   - seaborn
   - moviepy
+  - pytorch
+  - torchvision
   - torchmetrics
+  - jupyter
+  - ipykernel
 variables:
   CONDA_SUBDIR: osx-arm64
 prefix: /opt/homebrew/Caskroom/miniforge/base/envs/ml

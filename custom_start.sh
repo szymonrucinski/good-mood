@@ -1,1 +1,0 @@
-jupyter notebook  --allow-root --no-browser --port=7777 --NotebookApp.token='' --ServerApp.allow_origin='*' --NotebookApp.password='' --notebook-dir=/visium_task

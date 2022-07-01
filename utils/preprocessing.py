@@ -3,9 +3,11 @@ from matplotlib import pyplot as plt
 import numpy as np
 import matplotlib
 import json
+import platform
 
 # MacPlot error fix
-matplotlib.use("Agg")
+if platform.system() == 'Darwin':
+    matplotlib.use("Agg")
 
 
 def label_encoder_to_json(label_encoder, file_path):
