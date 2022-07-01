@@ -21,6 +21,7 @@ dependencies:
   - torchvision
   - torchmetrics
   - jupyter
+  - nbconvert
   - ipykernel
 variables:
   CONDA_SUBDIR: osx-arm64

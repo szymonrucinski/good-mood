@@ -1,5 +1,7 @@
 from email.mime import audio
 from email.policy import strict
+from multiprocessing import process
+from tabnanny import process_tokens
 import flask
 import io
 import string
@@ -17,6 +19,8 @@ from PIL import Image
 from flask import Flask, jsonify, request
 from pydub import AudioSegment
 import json
+import subprocess
+
 
 import matplotlib
 
@@ -28,6 +32,16 @@ model = torch.load("model.pt")
 f = open("labels.json")
 labels = json.load(f)
 f.close()
+
+### PRINT SCRIPT OUTPUT
+def execute(cmd):
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(popen.stdout.readline, ""):
+        yield stdout_line
+    popen.stdout.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
 
 
 # prepare audio
@@ -46,14 +60,22 @@ def index():
 
 @app.route("/train", methods=["GET"])
 def train_api():
-    # Return on a JSON format
+
+    command = "conda run -n ml jupyter nbconvert Report_SER.ipynb --to script && conda run -n ml python3 Report_SER.py"
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    command = "conda run -n ml python3 Report_SER.py"
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    process.wait()
+
     return "Training started"
+
+
+# Example
 
 
 @app.route("/predict", methods=["POST"])
 def predict_api():
     # Catch the image file from a POST request
-
     print(request)
 
     if "file" not in request.files:
@@ -84,4 +106,4 @@ def predict_api():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.getenv("PORT", 4444)))
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 4444)))
