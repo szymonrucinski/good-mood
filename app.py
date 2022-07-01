@@ -29,7 +29,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 
-model = torch.load("model.pt")
+model = torch.load("model.pt", map_location='cpu')
 f = open("labels.json")
 labels = json.load(f)
 f.close()
