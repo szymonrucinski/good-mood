@@ -4,6 +4,7 @@ from multiprocessing import process
 from tabnanny import process_tokens
 import flask
 import io
+import sys
 import string
 import time
 import os
@@ -33,22 +34,13 @@ f = open("labels.json")
 labels = json.load(f)
 f.close()
 
-### PRINT SCRIPT OUTPUT
-def execute(cmd):
-    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
-    for stdout_line in iter(popen.stdout.readline, ""):
-        yield stdout_line
-    popen.stdout.close()
-    return_code = popen.wait()
-    if return_code:
-        raise subprocess.CalledProcessError(return_code, cmd)
-
-
 # prepare audio
 def prepare_audio(bytes):
     s = io.BytesIO(bytes)
     AudioSegment.from_file(s).export("sample.wav", format="wav")
 
+def execute(command):
+    subprocess.check_call(command, stdout=sys.stdout, stderr=subprocess.STDOUT)
 
 app = Flask(__name__)
 
@@ -61,17 +53,16 @@ def index():
 @app.route("/train", methods=["GET"])
 def train_api():
 
-    command = "conda run -n ml jupyter nbconvert Report_SER.ipynb --to script && conda run -n ml python3 Report_SER.py"
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-    command = "conda run -n ml python3 Report_SER.py"
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-    process.wait()
+    command = "conda run -n ml jupyter nbconvert Report_SER.ipynb --to script"
+    p = subprocess.Popen(command.split(" "), stdout=sys.stdout, stderr=sys.stderr)
+    p.communicate()
 
+    command = "nohup conda run -n ml python3 Report_SER.py &"
+    import os
+    pid = os.fork()
+    if pid == 0:  # new process
+        os.system(command)
     return "Training started"
-
-
-# Example
-
 
 @app.route("/predict", methods=["POST"])
 def predict_api():

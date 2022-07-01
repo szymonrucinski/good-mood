@@ -2,6 +2,7 @@
 /test_dataset/*
 /.ipynb_checkpoints/
 *.csv
+*.out
 .DS_Store
 *.wav
 *.csv
