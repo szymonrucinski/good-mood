@@ -1,6 +1,10 @@
 # Emotion recognition
 ### Introduction 
-The following project is an API and development environment to detect emotions based on *.wav* files. Model was trained on images that are *MEL* spectrograms of audio files. Model is trained from scratch and uses AlexaNet architecture.
+The following project is an API and development environment to detect emotions based on *.wav* files. Model was trained on images that are *MEL* spectrograms of audio files. Model is trained from scratch and uses AlexaNet architecture to classify emotions.
+
+
+![image info](./documentation/dataset_summary.png)
+
 
 ### Build 
 *run_docker.sh* script contains all necessary command to build and run container.
