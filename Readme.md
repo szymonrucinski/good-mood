@@ -15,6 +15,10 @@ Used dataset is called EMO-DB. It contains 4,5k audio files with 8 emotions. Dat
 Model is based on AlexNet architecture. It was chosen because of its simplicity and good performance. It is composed of 5 convolutional layers and 3 fully connected layers. It uses ReLU activation function and max pooling. It was trained for 10 epochs with batch size of 32. It achieved 0.7 accuracy on validation set.
 ![AlexNetArchitecture](https://www.saagie.com/wp-content/uploads/2017/11/Capture-de%CC%81cran-2020-08-21-a%CC%80-15.34.12.png)
 
+Convolutional layers are used to extract features from images. Fully connected layers are used to classify images. Max pooling is used to reduce the size of the image. ReLU activation function is used to introduce non-linearity to the model. Network is being trained on the following MEL spectrograms.
+
+![image info](./documentation/mel_spectrogram.png)
+
 
 ### Build 
 *run_docker.sh* script contains all necessary command to build and run container.
