@@ -6,6 +6,7 @@ The goal of the following project is to build a production ready API. That based
   <img width="267" src="https://t3.ftcdn.net/jpg/03/62/51/30/240_F_362513016_tKjuA71sDPPSwbJGFKMWpNN4fLCGffZP.jpg">
   <img width="267" src="https://t4.ftcdn.net/jpg/02/05/12/91/240_F_205129152_e5aBnf3Nyegz77U42HdVYOiautetG9wl.jpg">
 </p>
+ą
 ### Dataset
 Used dataset is called EMO-DB. It contains 4,5k audio files with 8 emotions. Dataset is available [here](https://www.emodb.bilderbar.info/download/). It contains recordings of 10 different speakers. Each speaker recorded 15 sentences in 7 different emotions. Each sentence was recorded 3 times in German language.
 ![image info](./documentation/dataset_summary.png)
