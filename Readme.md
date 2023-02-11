@@ -1,9 +1,18 @@
 # Emotion recognition
 ### Introduction 
-The following project is an API and development environment to detect emotions based on *.wav* files. Model was trained on images that are *MEL* spectrograms of audio files. Model is trained from scratch and uses AlexaNet architecture to classify emotions.
+The goal of the following project is to build a production ready API. That based on the audio is capable to classify customers emotions based on the recordings. Model was trained on images that are *MEL* spectrograms of audio files. Model is trained from scratch and uses AlexaNet architecture to classify emotions.
 
-
+<p align="center">
+  <img width="267" src="https://t3.ftcdn.net/jpg/03/62/51/30/240_F_362513016_tKjuA71sDPPSwbJGFKMWpNN4fLCGffZP.jpg">
+  <img width="267" src="https://t4.ftcdn.net/jpg/02/05/12/91/240_F_205129152_e5aBnf3Nyegz77U42HdVYOiautetG9wl.jpg">
+</p>
+### Dataset
+Used dataset is called EMO-DB. It contains 4,5k audio files with 8 emotions. Dataset is available [here](https://www.emodb.bilderbar.info/download/). It contains recordings of 10 different speakers. Each speaker recorded 15 sentences in 7 different emotions. Each sentence was recorded 3 times in German language.
 ![image info](./documentation/dataset_summary.png)
+
+### Architecture
+Model is based on AlexNet architecture. It was chosen because of its simplicity and good performance. It is composed of 5 convolutional layers and 3 fully connected layers. It uses ReLU activation function and max pooling. It was trained for 10 epochs with batch size of 32. It achieved 0.7 accuracy on validation set.
+![AlexNetArchitecture](https://www.saagie.com/wp-content/uploads/2017/11/Capture-de%CC%81cran-2020-08-21-a%CC%80-15.34.12.png)
 
 
 ### Build 
