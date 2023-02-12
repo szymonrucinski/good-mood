@@ -10,7 +10,10 @@ The goal of the following project is to build a production ready API and applica
 
 ### Client
 Application provides an intuitive interface for the user. It allows to upload audio files and get predictions.
-![image info](./documentation/gui.png)
+
+<p align="center">
+  <img width="400" src="./documentation/gui.png">
+</p>
 
 ### Dataset
 Used dataset is called EMO-DB. It contains 4,5k audio files with 8 emotions. Dataset is available [here](https://www.emodb.bilderbar.info/download/). It contains recordings of 10 different speakers. Each speaker recorded 15 sentences in 7 different emotions. Each sentence was recorded 3 times in German language.
