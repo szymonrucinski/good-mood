@@ -1,12 +1,17 @@
 # Emotion recognition
 ### Introduction 
-The goal of the following project is to build a production ready API. That based on the audio is capable to classify customers emotions based on the recordings. Model was trained on images that are *MEL* spectrograms of audio files. Model is trained from scratch and uses AlexaNet architecture to classify emotions.
+The goal of the following project is to build a production ready API and application. That based on the audio is capable to classify customers emotions based on the recordings. Model was trained on images that are *MEL* spectrograms of audio files. Model is trained from scratch and uses AlexaNet architecture to classify emotions.
 
 <p align="center">
   <img width="267" src="https://t3.ftcdn.net/jpg/03/62/51/30/240_F_362513016_tKjuA71sDPPSwbJGFKMWpNN4fLCGffZP.jpg">
   <img width="267" src="https://t4.ftcdn.net/jpg/02/05/12/91/240_F_205129152_e5aBnf3Nyegz77U42HdVYOiautetG9wl.jpg">
 </p>
-ą
+
+
+### Client
+Application provides an intuitive interface for the user. It allows to upload audio files and get predictions.
+![image info](./documentation/gui.png)
+
 ### Dataset
 Used dataset is called EMO-DB. It contains 4,5k audio files with 8 emotions. Dataset is available [here](https://www.emodb.bilderbar.info/download/). It contains recordings of 10 different speakers. Each speaker recorded 15 sentences in 7 different emotions. Each sentence was recorded 3 times in German language.
 ![image info](./documentation/dataset_summary.png)
@@ -19,7 +24,9 @@ Convolutional layers are used to extract features from images. Fully connected l
 
 ![image info](./documentation/mel_spectrogram.png)
 
-
+### Stack
+This application was written in Python Models were trained using Pytorch. It uses FastAPI to expose API.
+It uses Docker to containerize the application. It uses Pytorch to build the model. It uses Librosa to extract features from audio files. It uses Pandas to load and manipulate data. It uses Numpy to manipulate data. It uses Matplotlib to plot data. It uses Scikit-learn to split data into train and test sets. It uses Scipy to save and load model.
 ### Build 
 *run_docker.sh* script contains all necessary command to build and run container.
 It will run container and expose API and JupyterNotebook server on ports *4444* and *8888*.

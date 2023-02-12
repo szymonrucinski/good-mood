@@ -1,13 +1,22 @@
-import librosa.display
-from matplotlib import pyplot as plt
-import numpy as np
-import matplotlib
+import io
 import json
 import platform
 
+import librosa.display
+import matplotlib
+import numpy as np
+from matplotlib import pyplot as plt
+from pydub import AudioSegment
+
 # MacPlot error fix
-if platform.system() == 'Darwin':
+if platform.system() == "Darwin":
     matplotlib.use("Agg")
+
+
+def prepare_audio(bytes) -> None:
+    """Pre process audio file to be used for prediction"""
+    sound_bytes = io.BytesIO(bytes)
+    AudioSegment.from_file(sound_bytes).export("sample.wav", format="wav")
 
 
 def label_encoder_to_json(label_encoder, file_path):
