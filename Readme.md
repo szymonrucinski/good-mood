@@ -1,4 +1,7 @@
-# Emotion recognition
+<p align="center">
+  <img width="800" src="./documentation/good_mood.png">
+</p>
+
 ### Introduction 
 The goal of the following project is to build a production ready API and application. That based on the audio is capable to classify customers emotions based on the recordings. Model was trained on images that are *MEL* spectrograms of audio files. Model is trained from scratch and uses AlexaNet architecture to classify emotions.
 
