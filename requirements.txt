@@ -39,7 +39,6 @@ imageio==2.25.0
 imageio-ffmpeg==0.4.8
 import-order==0.0.11
 ipykernel==6.21.1
-ipython==8.10.0
 isort==5.12.0
 jedi==0.18.2
 Jinja2==3.1.2
@@ -83,7 +82,6 @@ pycparser==2.21
 pycryptodome==3.17
 pydantic==1.10.4
 pydub==0.25.1
-Pygments==2.0.2
 pyparsing==3.0.9
 pyrsistent==0.19.3
 python-dateutil==2.8.2
