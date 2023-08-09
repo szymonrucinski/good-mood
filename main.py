@@ -24,10 +24,10 @@ app = FastAPI()
 CUSTOM_PATH = "/"
 
 
-@app.get("/")
-def read_main():
-    """Return a friendly HTTP greeting."""
-    return {"message": "This is your main app"}
+# @app.get("/")
+# def read_main():
+#     """Return a friendly HTTP greeting."""
+#     return {"message": "This is your main app"}
 
 
 # @app.get("/gradio")
