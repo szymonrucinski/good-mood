@@ -21,7 +21,7 @@ logger = getLogger(__name__)
 
 
 app = FastAPI()
-CUSTOM_PATH = "/gradio"
+CUSTOM_PATH = "/"
 
 
 @app.get("/")

@@ -18,3 +18,4 @@ if not os.path.exists(data_dir):
 logging.info("Downloading EMO-DB dataset")
 os.system("curl http://emodb.bilderbar.info/download/download.zip -O")
 os.system(f"unzip download.zip -d {data_dir} && rm download.zip")
+logging.info("Download completed!")
