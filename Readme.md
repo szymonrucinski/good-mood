@@ -72,14 +72,30 @@ uv run uvicorn main:app --host 0.0.0.0 --port 8000
 - UI:     <http://localhost:8000/>
 - Health: <http://localhost:8000/health>
 
+## Trained model (Hugging Face Hub)
+
+The trained model is published at
+**[szymonrucinski/good-mood-emotion](https://huggingface.co/szymonrucinski/good-mood-emotion)**.
+It is fetched automatically — the serving app downloads it on first startup, and
+Docker bakes it in at build time. To fetch it manually:
+
+```sh
+uv run python -m pipeline.get_model      # -> downloads model.pt
+```
+
+Point at a different checkpoint with the `MODEL_REPO` env var. The repo is public,
+so no token is needed. To regenerate the model instead, run the training steps above.
+
 ## Docker
 
-`model.pt` must exist in the repo root (train first) — it ships inside the image.
+The image pulls the model from the Hub at build time (no local `model.pt`
+needed):
 
 ```sh
 chmod +x start_docker.sh
 ./start_docker.sh
 ```
 
-The image installs the exact locked dependencies (`uv sync --frozen`), exposes
-port 8000, and has a `/health` HEALTHCHECK.
+The image installs the exact locked dependencies (`uv sync --frozen`), bakes in
+the model, exposes port 8000, and has a `/health` HEALTHCHECK. Override the model
+source with `docker build --build-arg MODEL_REPO=<user>/<repo>`.

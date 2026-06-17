@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Compile all modules
+        run: uv run python -m py_compile main.py pipeline/*.py utils/*.py
+
+      - name: Smoke test — model loads from Hugging Face and app serves
+        run: |
+          uv run python - <<'PY'
+          import main
+          assert main.MODEL is not None, "model failed to load from Hugging Face Hub"
+          h = main.health()
+          assert h["model_loaded"] is True, h
+          print("health:", h)
+          print("classes:", main.CLASSES)
+          PY

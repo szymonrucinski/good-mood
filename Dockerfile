@@ -13,9 +13,15 @@ RUN apt-get update \
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
-# App code + trained model (model.pt must be present in the build context).
+# App code.
 COPY . .
 RUN uv sync --frozen --no-dev
+
+# Bake the trained model into the image, pulled from the Hugging Face Hub
+# (public repo, no token). Override with --build-arg MODEL_REPO=<user>/<repo>.
+ARG MODEL_REPO=szymonrucinski/good-mood-emotion
+ENV MODEL_REPO=${MODEL_REPO}
+RUN uv run python -m pipeline.get_model
 
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000

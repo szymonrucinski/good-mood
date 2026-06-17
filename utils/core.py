@@ -59,6 +59,11 @@ IMAGENET_STD = (0.229, 0.224, 0.225)
 
 SEED = 42
 
+# Hugging Face Hub repo the trained model is distributed from. Override with the
+# MODEL_REPO env var to point at a fork / different checkpoint.
+MODEL_REPO = os.environ.get("MODEL_REPO", "szymonrucinski/good-mood-emotion")
+MODEL_FILENAME = "model.pt"
+
 
 # --- Reproducibility ---------------------------------------------------------
 
@@ -149,6 +154,23 @@ def build_model(num_classes: int = len(EMOTIONS), pretrained: bool = True) -> nn
     model = models.resnet18(weights=weights)
     model.fc = nn.Linear(model.fc.in_features, num_classes)
     return model
+
+
+def ensure_model(path: str) -> str:
+    """Return a local path to model.pt, downloading it from the Hugging Face Hub
+    (``MODEL_REPO``) if it is not already present. The public model repo needs no
+    token, so this works in clean clones and Docker builds."""
+    import shutil
+
+    if os.path.exists(path):
+        return path
+    from huggingface_hub import hf_hub_download
+
+    cached = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILENAME)
+    dest_dir = os.path.dirname(os.path.abspath(path))
+    os.makedirs(dest_dir, exist_ok=True)
+    shutil.copyfile(cached, path)
+    return path
 
 
 def load_checkpoint(path: str, device: torch.device) -> Tuple[nn.Module, List[str]]:

@@ -22,6 +22,7 @@ from fastapi import FastAPI
 from utils.core import (
     EMOTION_DISPLAY,
     audio_to_mel_image,
+    ensure_model,
     get_transforms,
     load_checkpoint,
 )
@@ -33,14 +34,20 @@ MODEL_PATH = Path(__file__).resolve().parent / "model.pt"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRANSFORM = get_transforms(train=False)
 
-# Load the trained model once at startup (None if not yet trained).
+# Load the trained model once at startup, fetching it from the Hugging Face Hub
+# if it is not present locally.
 MODEL = None
 CLASSES: list[str] = []
-if MODEL_PATH.exists():
+try:
+    ensure_model(str(MODEL_PATH))
     MODEL, CLASSES = load_checkpoint(str(MODEL_PATH), DEVICE)
     log.info("loaded model (%d classes) on %s", len(CLASSES), DEVICE)
-else:
-    log.warning("model.pt not found — train first: uv run python -m pipeline.train")
+except Exception:
+    log.warning(
+        "model unavailable — download from HF failed and no local model.pt. "
+        "Train (uv run python -m pipeline.train) or set MODEL_REPO.",
+        exc_info=True,
+    )
 
 
 def predict(file_path: str) -> dict:
