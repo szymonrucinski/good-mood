@@ -39,31 +39,41 @@ early stopping + LR scheduling; the **test** set is touched only once, at the en
 > spectrogram, image size, normalization and label order are guaranteed identical
 > — no train/serve skew.
 
+## Live demo
+
+▶️ **<https://huggingface.co/spaces/szymonrucinski/good-mood>** — runs on a free
+CPU Space (ONNX Runtime, no GPU).
+
 ## Stack
 
-Python · PyTorch / torchvision · librosa · scikit-learn · FastAPI · Gradio ·
-[uv](https://docs.astral.sh/uv/) for reproducible env management · Docker.
+**Serving:** ONNX Runtime (CPU) · Gradio · FastAPI — no torch/CUDA at inference.
+**Training:** PyTorch / torchvision · scikit-learn (optional `train` extra).
+librosa · [uv](https://docs.astral.sh/uv/) · Docker.
 
 ## Setup (reproducible via uv)
 
 ```sh
-uv sync                       # create .venv from uv.lock (exact, pinned)
+uv sync                  # lean SERVING env (ONNX Runtime, no torch) — runs the app
+uv sync --extra train    # add PyTorch/CUDA for training + ONNX export
 ```
 
-`uv.lock` pins every dependency (incl. CUDA-12.4 torch wheels) to exact versions
-+ hashes, so the environment rebuilds identically on any machine.
+`uv.lock` pins every dependency to exact versions + hashes. Inference runs on
+ONNX Runtime, so the default env (and the Docker image) ship **without torch or
+CUDA** — torch lives in the optional `train` extra.
 
-## Train
+## Train (needs the `train` extra)
 
 ```sh
-uv run python -m pipeline.get_data        # download EMO-DB into data/raw/
-uv run python -m pipeline.train --epochs 40   # -> writes model.pt
+uv sync --extra train
+uv run python -m pipeline.get_data              # download EMO-DB into data/raw/
+uv run python -m pipeline.train --epochs 40     # -> writes model.pt
+uv run python -m pipeline.export_onnx           # model.pt -> model.onnx (+ parity check)
 ```
 
 Training auto-selects CUDA → MPS → CPU. Useful flags: `--lr`, `--batch-size`,
 `--patience`, `--seed`, `--device`.
 
-## Serve
+## Serve (ONNX, no torch)
 
 ```sh
 uv run uvicorn main:app --host 0.0.0.0 --port 8000
@@ -72,19 +82,17 @@ uv run uvicorn main:app --host 0.0.0.0 --port 8000
 - UI:     <http://localhost:8000/>
 - Health: <http://localhost:8000/health>
 
+The UI (in `ui.py`, shared with the Space via `app.py`) is a Gradio dashboard:
+waveform, MEL-spectrogram heatmap, and the 7-class probability histogram beside
+the emotion verdict. Inference is ONNX Runtime on CPU.
+
 ## Trained model (Hugging Face Hub)
 
-The trained model is published at
+Both the torch checkpoint (`model.pt`) and the serving model (`model.onnx`) are
+published at
 **[szymonrucinski/good-mood-emotion](https://huggingface.co/szymonrucinski/good-mood-emotion)**.
-It is fetched automatically — the serving app downloads it on first startup, and
-Docker bakes it in at build time. To fetch it manually:
-
-```sh
-uv run python -m pipeline.get_model      # -> downloads model.pt
-```
-
-Point at a different checkpoint with the `MODEL_REPO` env var. The repo is public,
-so no token is needed. To regenerate the model instead, run the training steps above.
+The serving app downloads `model.onnx` on first startup (Docker bakes it in at
+build). Override the source with the `MODEL_REPO` env var — public, no token.
 
 ## Docker
 

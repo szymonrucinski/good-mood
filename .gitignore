@@ -140,6 +140,7 @@ ui-tests/playwright-report
 *.wav
 *.csv
 *.pt
+*.onnx
 *.ckpt
 *.pyc
 *.pytorchtools

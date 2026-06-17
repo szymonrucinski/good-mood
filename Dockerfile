@@ -17,11 +17,13 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 RUN uv sync --frozen --no-dev
 
-# Bake the trained model into the image, pulled from the Hugging Face Hub
-# (public repo, no token). Override with --build-arg MODEL_REPO=<user>/<repo>.
+# Bake the ONNX model into the image, pulled from the Hugging Face Hub (public,
+# no token). Serving is ONNX Runtime on CPU — no torch/CUDA — so the image is
+# lean (~1 GB, not ~7 GB). Override with --build-arg MODEL_REPO=<user>/<repo>.
 ARG MODEL_REPO=szymonrucinski/good-mood-emotion
 ENV MODEL_REPO=${MODEL_REPO}
-RUN uv run python -m pipeline.get_model
+RUN uv run python -c "from utils.core import ensure_onnx_model; ensure_onnx_model('model.onnx')" \
+    && test "$(stat -c%s model.onnx)" -gt 1000000
 
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000

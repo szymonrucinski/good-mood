@@ -4,37 +4,45 @@ version = "0.2.0"
 description = "Audio emotion classifier: MEL spectrogram -> CNN -> FastAPI + Gradio app"
 readme = "Readme.md"
 requires-python = ">=3.11,<3.12"
+# Default deps = SERVING only (ONNX Runtime inference — no torch, no CUDA).
+# This keeps `uv sync` and the Docker image lean (~hundreds of MB, not ~7 GB).
 dependencies = [
-    # deep learning
-    "torch==2.5.1",
-    "torchvision==0.20.1",
     # audio + signal
     "librosa>=0.10.2,<0.11",
     "soundfile>=0.12.1",
-    "pydub>=0.25.1",
-    # data / ml
+    # numerics + plotting
     "numpy>=1.26,<2.1",
-    "pandas>=2.2,<2.3",
-    "scikit-learn>=1.5,<1.6",
-    # plotting
     "matplotlib>=3.9,<3.10",
-    "seaborn>=0.13,<0.14",
     "pillow>=10.4",
+    # inference
+    "onnxruntime>=1.19",
     # serving
     "fastapi>=0.115,<0.116",
     "uvicorn[standard]>=0.32,<0.33",
     "gradio==5.50.0",  # pinned: looser ranges re-resolve to old gradio-client with a broken api_info
     "python-multipart>=0.0.12",
-    # misc
+    "huggingface-hub>=0.26",
+]
+
+[project.optional-dependencies]
+# Training + ONNX export (heavy: torch/CUDA). Install with: uv sync --extra train
+train = [
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+    "onnx>=1.17",
+    "scikit-learn>=1.5,<1.6",
+    "pandas>=2.2,<2.3",
+    "seaborn>=0.13,<0.14",
+    "pydub>=0.25.1",
     "tqdm>=4.66",
     "coloredlogs>=15.0.1",
-    "huggingface-hub>=0.26",
 ]
 
 [project.scripts]
 goodmood-getdata = "pipeline.get_data:main"
 goodmood-getmodel = "pipeline.get_model:main"
 goodmood-train = "pipeline.train:main"
+goodmood-export = "pipeline.export_onnx:main"
 
 [build-system]
 requires = ["hatchling"]
