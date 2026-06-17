@@ -1,110 +1,84 @@
-import json
+"""EMO-DB preprocessing: parse labels, render MEL spectrograms, Dataset."""
+from __future__ import annotations
+
 import os
-import platform
-from PIL import Image
-import librosa.display
-import matplotlib
-import numpy as np
-from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm
+from pathlib import Path
+
+import librosa
 import pandas as pd
-from matplotlib import pyplot as plt
+from PIL import Image
+from torch.utils.data import Dataset
+from tqdm import tqdm
 
-# MacPlot error fix
-if platform.system() == "Darwin":
-    matplotlib.use("Agg")
+from utils.core import EMOTIONS, audio_to_mel_image
 
-
-def label_encoder_to_json(label_encoder, file_path):
-    mapping = dict(zip(range(len(label_encoder.classes_)), label_encoder.classes_))
-    file = open(file_path, "w")
-    json.dump(mapping, file)
-    file.close()
-
-
-def plot_mel(audio, rate):
-    """
-    Args:
-        audio - vector of audio.
-        rate - int sound rate.
-    """
-    D = np.abs(librosa.stft(audio)) ** 2
-    S = librosa.feature.melspectrogram(S=D, sr=rate)
-    fig = plt.gcf()
-    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-    librosa.display.specshow(librosa.power_to_db(S, ref=np.max))
-    plt.close()
-    return fig
+# EMO-DB encodes the emotion in the 6th filename character (index 5), e.g.
+# "03a01Wa.wav" -> 'W'. German emotion -> our English class label.
+EMODB_CODE_TO_EMOTION = {
+    "W": "angry",    # Wut (anger)
+    "L": "bored",    # Langeweile (boredom)
+    "E": "disgust",  # Ekel (disgust)
+    "A": "fear",     # Angst (fear)
+    "F": "happy",    # Freude (happiness)
+    "T": "sad",      # Trauer (sadness)
+    "N": "neutral",  # Neutral
+}
 
 
-def decompose_emodb(EMODB_PATH):
-    "Name Folder same as file extension"
-    # EMODB_PATH = './dataset/wav/'
-    emotion = []
-    path = []
-    for root, dirs, files in os.walk(EMODB_PATH):
-        for name in files:
-            if name[5] == "W":  # Ärger (Wut) -> Angry
-                emotion.append("angry")
-            elif name[5] == "L":  # Langeweile -> Boredom
-                emotion.append("bored")
-            elif name[5] == "E":  # Ekel -> Disgusted
-                emotion.append("disgust")
-            elif name[5] == "A":  # Angst -> Angry
-                emotion.append("fear")
-            elif name[5] == "F":  # Freude -> Happiness
-                emotion.append("happy")
-            elif name[5] == "T":  # Trauer -> Sadness
-                emotion.append("sad")
-            elif name[5] == "N":
-                emotion.append("neutral")
-            else:
-                emotion.append("unknown")
-            path.append(os.path.join(EMODB_PATH, name))
-
-    emodb_df = pd.DataFrame(emotion, columns=["labels"])
-    emodb_df["source"] = "EMODB"
-    emodb_df = pd.concat([emodb_df, pd.DataFrame(path, columns=["path"])], axis=1)
-
-    return emodb_df
+def decompose_emodb(audio_dir: str) -> pd.DataFrame:
+    """Scan an EMO-DB wav folder and return a DataFrame[label, source, path]."""
+    rows = []
+    for name in sorted(os.listdir(audio_dir)):
+        if not name.lower().endswith(".wav"):
+            continue
+        emotion = EMODB_CODE_TO_EMOTION.get(name[5], "unknown")
+        rows.append(
+            {"label": emotion, "source": "EMODB", "path": os.path.join(audio_dir, name)}
+        )
+    df = pd.DataFrame(rows)
+    df = df[df["label"] != "unknown"].reset_index(drop=True)
+    return df
 
 
-def create_audio_spectrogram(
-    image_dataset_path: str, audio_dataset_path: str, dataset_summary: pd.DataFrame
-) -> None:
-    images_count = len(os.listdir(image_dataset_path))
-    audio_count = len(os.listdir(audio_dataset_path))
-
-    if images_count != audio_count:
-        for path in tqdm(dataset_summary["path"]):
-            jpeg_path = (
-                path.replace("raw", "preprocessed/images")
-                .replace("jpeg/", "")
-                .replace("wav", "jpeg")
-            )
-            print(jpeg_path)
-            audio, rate = librosa.load(path)
-            fig = plot_mel(audio, rate)
-            fig.savefig(jpeg_path)
+def build_spectrograms(df: pd.DataFrame, image_dir: str) -> pd.DataFrame:
+    """Render each wav to a PNG MEL spectrogram (cached) and return a copy of
+    ``df`` whose ``path`` points at the PNG. PNG (lossless) is used so the
+    training images match what the serving app generates in-memory."""
+    os.makedirs(image_dir, exist_ok=True)
+    image_paths = []
+    for wav_path in tqdm(df["path"], desc="spectrograms"):
+        stem = Path(wav_path).stem
+        png_path = os.path.join(image_dir, f"{stem}.png")
+        if not os.path.exists(png_path):
+            audio, sr = librosa.load(wav_path)
+            audio_to_mel_image(audio, sr).save(png_path)
+        image_paths.append(png_path)
+    out = df.copy()
+    out["path"] = image_paths
+    return out
 
 
 class EmoDataset(Dataset):
+    """Spectrogram-image dataset. Expects columns ``path`` (png) and ``target``
+    (int class index)."""
+
     def __init__(self, df: pd.DataFrame, transform=None):
-        self.df = df
+        self.df = df.reset_index(drop=True)
         self.transform = transform
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.df)
 
-    def __getitem__(self, idx):
-        image_label = self.df.iloc[idx]["labels"]
-        image_path = self.df.iloc[idx]["path"]
-
-        image = Image.open(image_path)
-
+    def __getitem__(self, idx: int):
+        row = self.df.iloc[idx]
+        image = Image.open(row["path"]).convert("RGB")  # force 3 channels
         if self.transform:
             image = self.transform(image)
-        if image.shape[0] == 1:
-            image = image.repeat(3, 1, 1)
+        return image, int(row["target"])
 
-        return (image, image_label)
+
+def encode_targets(df: pd.DataFrame) -> pd.DataFrame:
+    """Map string labels -> fixed integer indices (EMOTIONS order)."""
+    out = df.copy()
+    out["target"] = out["label"].map(lambda e: EMOTIONS.index(e))
+    return out

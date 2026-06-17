@@ -1,63 +1,93 @@
-"""Serve the model as a fastapi app with gradio client"""
-import json
+"""Serve the good-mood emotion classifier as a FastAPI + Gradio app.
+
+    uv run uvicorn main:app --host 0.0.0.0 --port 8000
+
+The Gradio UI is mounted at "/", a JSON health check at "/health".
+Inference uses the EXACT same spectrogram + transforms as training
+(utils.core), so there is no train/serve skew.
+"""
+from __future__ import annotations
+
 import logging
-from logging import getLogger
+import os
 from pathlib import Path
 
-import coloredlogs
+os.environ.setdefault("GRADIO_ANALYTICS_ENABLED", "False")
+
 import gradio as gr
 import librosa
 import torch
-import torchvision.transforms as transforms
 from fastapi import FastAPI
-from moviepy.video.io.bindings import mplfig_to_npimage
-from PIL import Image
 
-from utils.preprocessing import plot_mel
-
-coloredlogs.install()
-
-logger = getLogger(__name__)
-
-
-app = FastAPI()
-CUSTOM_PATH = "/"
-
-
-# @app.get("/")
-# def read_main():
-#     """Return a friendly HTTP greeting."""
-#     return {"message": "This is your main app"}
-
-
-# @app.get("/gradio")
-def predict(file_path):
-    """Predict the emotion of the audio file"""
-    # parse the json data
-    logging.info(file_path)
-    audio, rate = librosa.load(file_path)
-    fig = plot_mel(audio, rate)
-    numpy_image = mplfig_to_npimage(fig)
-
-    data = Image.fromarray(numpy_image)
-    # data.save("gfg_dummy_pic.jpeg")
-    resize = transforms.Compose([transforms.Resize((256, 256)), transforms.ToTensor()])
-    input = resize(data).unsqueeze(0)
-    f = open(Path(Path().resolve(), "data/responses.json"), encoding="utf-8")
-    labels = json.load(f)
-    f.close()
-
-    outputs = MODEL.forward(input)
-    _, y_hat = outputs.max(1)
-    prediction = labels[str(y_hat.item())]
-    return prediction
-
-
-io = gr.Interface(
-    fn=predict,
-    inputs=gr.Audio(source="microphone", type="filepath"),
-    outputs="text",
+from utils.core import (
+    EMOTION_DISPLAY,
+    audio_to_mel_image,
+    get_transforms,
+    load_checkpoint,
 )
-MODEL = torch.load("model.pt", map_location="cpu")
-gradio_app = gr.routes.App.create_app(io)
-app.mount(CUSTOM_PATH, gradio_app)
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("good-mood")
+
+MODEL_PATH = Path(__file__).resolve().parent / "model.pt"
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+TRANSFORM = get_transforms(train=False)
+
+# Load the trained model once at startup (None if not yet trained).
+MODEL = None
+CLASSES: list[str] = []
+if MODEL_PATH.exists():
+    MODEL, CLASSES = load_checkpoint(str(MODEL_PATH), DEVICE)
+    log.info("loaded model (%d classes) on %s", len(CLASSES), DEVICE)
+else:
+    log.warning("model.pt not found — train first: uv run python -m pipeline.train")
+
+
+def predict(file_path: str) -> dict:
+    """Return {emotion_display: probability} for a recorded/uploaded clip."""
+    if MODEL is None:
+        raise gr.Error("Model not trained yet. Run: uv run python -m pipeline.train")
+    if not file_path:
+        raise gr.Error("Please record or upload an audio clip first.")
+
+    try:
+        audio, sr = librosa.load(file_path)
+        image = audio_to_mel_image(audio, sr)
+        tensor = TRANSFORM(image).unsqueeze(0).to(DEVICE)
+        with torch.no_grad():
+            probs = torch.softmax(MODEL(tensor), dim=1).squeeze(0)
+    except Exception as exc:  # surface a clean message instead of a 500
+        log.exception("prediction failed")
+        raise gr.Error(f"Could not process audio: {exc}")
+
+    return {
+        EMOTION_DISPLAY.get(cls, cls): float(probs[i])
+        for i, cls in enumerate(CLASSES)
+    }
+
+
+demo = gr.Interface(
+    fn=predict,
+    inputs=gr.Audio(sources=["microphone", "upload"], type="filepath", label="Audio"),
+    outputs=gr.Label(num_top_classes=3, label="Predicted emotion"),
+    title="🎙️ Good Mood — Speech Emotion Recognition",
+    description=(
+        "Record or upload a short speech clip and the model predicts the "
+        "speaker's emotion from its MEL spectrogram. Trained on EMO-DB "
+        "(German emotional speech) with a fine-tuned ResNet18."
+    ),
+    flagging_mode="never",
+    theme=gr.themes.Soft(),
+)
+
+app = FastAPI(title="good-mood")
+
+
+@app.get("/health")
+def health() -> dict:
+    """Liveness/readiness probe."""
+    return {"status": "ok", "model_loaded": MODEL is not None, "device": str(DEVICE)}
+
+
+# Mount the Gradio UI at the site root.
+app = gr.mount_gradio_app(app, demo, path="/")

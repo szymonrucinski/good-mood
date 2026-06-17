@@ -1,72 +1,53 @@
-import torch
+"""Evaluation metrics: accuracy, loss, confusion matrix, error analysis."""
+from __future__ import annotations
+
+from typing import List
+
 import numpy as np
 import pandas as pd
-import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-import itertools
-import seaborn as sns
-from sklearn.metrics import confusion_matrix
+import torch
+from sklearn.metrics import classification_report, confusion_matrix
 
 
-def testAccuracy(model, test_loader, device):
+@torch.no_grad()
+def evaluate(model, loader, criterion, device):
+    """Return (avg_loss, accuracy) over a loader, in eval mode.
+
+    Used for BOTH validation and test so early stopping watches a real
+    held-out signal (the original code validated on the train loader)."""
     model.eval()
-    accuracy = 0.0
-    total = 0.0
-
-    with torch.no_grad():
-        for images, labels in test_loader:
-            # run the model on the test set to predict labels
-            images = images.to(device)
-            labels = labels.to(device)
-            outputs = model(images).to(device)
-            # the label with the highest energy will be our prediction
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            accuracy += (predicted == labels).sum().item()
-
-    # compute the accuracy over all test images
-    accuracy = accuracy / total
-    return accuracy
+    total, correct, loss_sum = 0, 0, 0.0
+    for images, labels in loader:
+        images, labels = images.to(device), labels.to(device)
+        outputs = model(images)
+        loss_sum += criterion(outputs, labels).item() * labels.size(0)
+        correct += (outputs.argmax(1) == labels).sum().item()
+        total += labels.size(0)
+    return loss_sum / max(total, 1), correct / max(total, 1)
 
 
-def generate_confusion_matrix(y_true, y, classes):
-    cf_matrix = confusion_matrix(y_true, y)
-
-    ax = plt.subplot()
-    sns.heatmap(cf_matrix, annot=True)
-
-    ax.set_xlabel("Predicted labels")
-    ax.set_ylabel("True labels")
-    ax.set_title("Confusion Matrix")
-    ax.xaxis.set_ticklabels(classes)
-    ax.yaxis.set_ticklabels(classes)
-
-
-def error_analysis(test_loader, model, label_encoder, device):
+@torch.no_grad()
+def error_analysis(loader, model, classes: List[str], device) -> pd.DataFrame:
+    """Per-example expected vs predicted, decoded to class names."""
     model.eval()
-    preds = []
-    true_labels = []
-    for images, labels in test_loader:
+    preds, trues = [], []
+    for images, labels in loader:
+        outputs = model(images.to(device))
+        preds.append(outputs.argmax(1).cpu().numpy())
+        trues.append(labels.numpy())
+    all_preds = np.concatenate(preds)
+    all_trues = np.concatenate(trues)
+    decode = np.array(classes)
+    return pd.DataFrame(
+        {"expected": decode[all_trues], "predicted": decode[all_preds]}
+    )
 
-        data, target = images.to(device), labels.to(device)
-        output = model(data)  # shape = torch.Size([batch_size, 10])
-        pred = output.argmax(
-            dim=1, keepdim=True
-        )  # pred will be a 2d tensor of shape [batch_size,1]
 
-        preds.append(pred.flatten().to("cpu").numpy())
-        true_labels.append(labels.flatten().numpy())
+def classification_summary(df: pd.DataFrame, classes: List[str]) -> str:
+    return classification_report(
+        df["expected"], df["predicted"], labels=classes, zero_division=0
+    )
 
-    #### GET MISIDENTIFIED EXAMPLE
-    all_preds = np.concatenate(preds, axis=0)
-    true_labels = np.concatenate(true_labels, axis=0)
-    df = pd.DataFrame({"expected": true_labels, "predicted": all_preds})
 
-    ### DECODE LABELS
-    for col in df:
-        df[col] = label_encoder.inverse_transform(df[col])
-
-    return df
+def confusion(df: pd.DataFrame, classes: List[str]) -> np.ndarray:
+    return confusion_matrix(df["expected"], df["predicted"], labels=classes)

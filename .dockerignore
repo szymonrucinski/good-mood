@@ -1,0 +1,17 @@
+# Keep the build context small + reproducible.
+# NOTE: model.pt is intentionally NOT ignored — it must ship in the image.
+.git
+.gitignore
+.venv
+__pycache__/
+*.pyc
+data/raw
+data/preprocessed
+notebooks
+documentation
+.ipynb_checkpoints
+.pytest_cache
+.mypy_cache
+*.zip
+*.wav
+.claude
