@@ -23,7 +23,7 @@ dependencies = [
     # serving
     "fastapi>=0.115,<0.116",
     "uvicorn[standard]>=0.32,<0.33",
-    "gradio>=5.6,<6",
+    "gradio==5.50.0",  # pinned: looser ranges re-resolve to old gradio-client with a broken api_info
     "python-multipart>=0.0.12",
     # misc
     "tqdm>=4.66",
@@ -54,3 +54,13 @@ explicit = true
 [tool.uv.sources]
 torch = { index = "pytorch-cu124" }
 torchvision = { index = "pytorch-cu124" }
+
+# Dev tooling (installed by `uv sync`, excluded from the image via --no-dev).
+# ruff>=0.9.3 to stay compatible with gradio (which itself depends on ruff).
+[dependency-groups]
+dev = ["ruff>=0.9.3"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+extend-exclude = ["notebooks"]

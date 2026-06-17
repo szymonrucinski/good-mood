@@ -17,6 +17,11 @@ jobs:
       - name: Install locked dependencies
         run: uv sync --frozen
 
+      - name: Lint + format check (ruff)
+        run: |
+          uv run ruff check main.py pipeline utils
+          uv run ruff format --check main.py pipeline utils
+
       - name: Compile all modules
         run: uv run python -m py_compile main.py pipeline/*.py utils/*.py
 
