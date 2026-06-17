@@ -137,15 +137,28 @@ def audio_to_mel_image(audio: np.ndarray, sr: int) -> Image.Image:
 
 # --- Scientific visualizations (for the UI) ----------------------------------
 
+# Tuned for a light card surface: transparent figure, dark text, faint grid.
 _ACCENT = "#6366f1"
-_FG = "#1e1b2e"
+_FG = "#1e2030"
+_MUTED = "#6b7280"
+_HAIRLINE = (0.0, 0.0, 0.0, 0.14)
 
 
 def _new_fig(w: float, h: float) -> Figure:
     fig = Figure(figsize=(w, h), dpi=120)
     FigureCanvasAgg(fig)
-    fig.patch.set_alpha(0.0)  # transparent so it blends into the UI card
+    fig.patch.set_alpha(0.0)  # transparent -> blends into the dark card
     return fig
+
+
+def _style_ax(ax, title: str) -> None:
+    ax.set_facecolor("none")
+    ax.set_title(title, fontsize=10.5, color=_FG, fontweight="bold", pad=8)
+    ax.tick_params(colors=_MUTED, labelsize=7.5)
+    ax.xaxis.label.set_color(_MUTED)
+    ax.yaxis.label.set_color(_MUTED)
+    for spine in ax.spines.values():
+        spine.set_color(_HAIRLINE)
 
 
 def plot_waveform(audio: np.ndarray, sr: int) -> Figure:
@@ -153,12 +166,13 @@ def plot_waveform(audio: np.ndarray, sr: int) -> Figure:
     fig = _new_fig(6.0, 2.1)
     ax = fig.add_subplot(111)
     t = np.arange(len(audio)) / float(sr)
-    ax.plot(t, audio, linewidth=0.6, color=_ACCENT)
-    ax.set_title("Waveform", fontsize=10, color=_FG)
+    ax.plot(t, audio, linewidth=0.7, color=_ACCENT)
+    ax.fill_between(t, audio, color=_ACCENT, alpha=0.12)
+    _style_ax(ax, "Waveform")
     ax.set_xlabel("Time (s)", fontsize=8)
     ax.set_ylabel("Amplitude", fontsize=8)
     ax.margins(x=0)
-    ax.grid(True, alpha=0.15)
+    ax.grid(True, color="#000000", alpha=0.06)
     fig.tight_layout()
     return fig
 
@@ -174,8 +188,9 @@ def plot_mel_heatmap(audio: np.ndarray, sr: int) -> Figure:
         mel_db, sr=sr, x_axis="time", y_axis="mel", cmap="magma", ax=ax
     )
     cbar = fig.colorbar(img, ax=ax, format="%+2.0f dB")
-    cbar.ax.tick_params(labelsize=7)
-    ax.set_title("MEL spectrogram", fontsize=10, color=_FG)
+    cbar.ax.tick_params(colors=_MUTED, labelsize=7)
+    cbar.outline.set_edgecolor(_HAIRLINE)
+    _style_ax(ax, "MEL spectrogram")
     ax.set_xlabel("Time (s)", fontsize=8)
     ax.set_ylabel("Mel frequency (Hz)", fontsize=8)
     fig.tight_layout()
@@ -191,14 +206,14 @@ def plot_probabilities(probs: dict) -> Figure:
     values = np.array([v for _, v in items], dtype=float)
     fig = _new_fig(6.0, 3.0)
     ax = fig.add_subplot(111)
-    colors = colormaps["viridis"](0.15 + 0.8 * values)
-    ax.barh(labels, values, color=colors)
+    colors = colormaps["plasma"](0.25 + 0.7 * values)
+    ax.barh(labels, values, color=colors, height=0.66)
     for y, v in enumerate(values):
         ax.text(min(v + 0.02, 0.98), y, f"{v:.0%}", va="center", fontsize=8, color=_FG)
-    ax.set_title("Class probabilities", fontsize=10, color=_FG)
+    _style_ax(ax, "Class probabilities")
     ax.set_xlabel("Probability", fontsize=8)
     ax.set_xlim(0, 1)
-    ax.grid(True, axis="x", alpha=0.15)
+    ax.grid(True, axis="x", color="#000000", alpha=0.06)
     fig.tight_layout()
     return fig
 

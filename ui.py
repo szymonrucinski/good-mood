@@ -1,10 +1,8 @@
-"""Gradio UI for good-mood — sleek scientific dashboard.
+"""Gradio UI for good-mood — clean dashboard (dark hero + Soft body).
 
 Inference runs on ONNX Runtime (CPU, no torch/CUDA). The MEL-spectrogram
 preprocessing is shared with training via utils.core, so there is no
-train/serve skew. This module is imported by:
-  - main.py  -> mounts `demo` on FastAPI (local, adds /health)
-  - app.py   -> demo.launch() for the Hugging Face Space
+train/serve skew. Imported by main.py (FastAPI /health) and app.py (HF Space).
 """
 
 from __future__ import annotations
@@ -37,7 +35,6 @@ MODEL_PATH = ROOT / "model.onnx"
 
 
 def _example_dir() -> Path:
-    """Bundled samples (on the Space) or the local dataset, whichever exists."""
     for cand in (ROOT / "samples", ROOT / "data" / "raw" / "wav"):
         if cand.is_dir():
             return cand
@@ -54,11 +51,8 @@ _EXAMPLE_SPEC = [
 EXAMPLES = [
     [str(EXAMPLES_DIR / f)] for f, _ in _EXAMPLE_SPEC if (EXAMPLES_DIR / f).exists()
 ]
-# Preload one clip so the dashboard renders a full result on first visit
-# (empty plots look broken otherwise).
 DEFAULT_SAMPLE = EXAMPLES[0][0] if EXAMPLES else None
 
-# Load the ONNX model once at startup (downloads from the HF Hub if absent).
 MODEL = None
 MODEL_LOADED = False
 try:
@@ -76,8 +70,7 @@ except Exception:
 
 
 def analyze(file_path: str):
-    """Run the classifier and build every dashboard output for one clip:
-    (emoji label dict, waveform fig, MEL fig, probability fig)."""
+    """clip -> (emoji label dict, waveform fig, MEL fig, probability fig)."""
     if MODEL is None:
         raise gr.Error("Model unavailable. Check the Space logs / MODEL_REPO.")
     if not file_path:
@@ -100,257 +93,121 @@ def analyze(file_path: str):
     )
 
 
-# --- Theme -------------------------------------------------------------------
+# --- Header + stats (HTML) ---------------------------------------------------
 
-theme = gr.themes.Soft(
-    primary_hue=gr.themes.colors.indigo,
-    secondary_hue=gr.themes.colors.slate,
-    neutral_hue=gr.themes.colors.slate,
-    radius_size=gr.themes.sizes.radius_lg,
-    spacing_size=gr.themes.sizes.spacing_lg,
-    text_size=gr.themes.sizes.text_md,
-    font=(gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "sans-serif"),
-    font_mono=(gr.themes.GoogleFont("JetBrains Mono"), "ui-monospace", "monospace"),
-).set(
-    body_background_fill="#f6f7fb",
-    block_background_fill="#ffffff",
-    block_border_width="0px",
-    block_shadow="0 1px 2px rgba(16,18,28,0.04), 0 10px 30px rgba(16,18,28,0.06)",
-    block_radius="20px",
-    block_label_background_fill="transparent",
-    block_label_text_weight="600",
-    panel_background_fill="#ffffff",
-    button_primary_background_fill="*primary_500",
-    button_primary_background_fill_hover="*primary_600",
-    button_primary_text_color="#ffffff",
-    button_large_radius="14px",
-    input_radius="14px",
-)
-
-
-# --- Custom CSS --------------------------------------------------------------
-
-CSS = """
-:root, .gradio-container {
-    --gm-accent: #6366f1;
-    --gm-accent-soft: rgba(99,102,241,0.10);
-    --gm-ink: #1e2030;
-    --gm-muted: #6b7280;
-    --gm-line: rgba(20,22,36,0.08);
-}
-.gradio-container {
-    background: #f6f7fb !important;
-    color: var(--gm-ink) !important;
-    max-width: 1160px !important;
-    margin: 0 auto !important;
-    padding-bottom: 56px !important;
-}
-.gm-header {
-    margin: 26px 0 10px;
-    padding: 40px 44px;
-    border-radius: 26px;
-    background:
-        radial-gradient(120% 150% at 0% 0%, rgba(99,102,241,0.16) 0%, rgba(99,102,241,0) 55%),
-        radial-gradient(120% 150% at 100% 0%, rgba(168,85,247,0.12) 0%, rgba(168,85,247,0) 55%),
-        #ffffff;
-    box-shadow: 0 1px 2px rgba(16,18,28,0.04), 0 18px 50px rgba(16,18,28,0.08);
-}
-.gm-eyebrow {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: 12px; font-weight: 600; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--gm-accent);
-    background: var(--gm-accent-soft);
-    padding: 6px 12px; border-radius: 999px;
-}
-.gm-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,0.6);
-    animation: gm-pulse 2.4s infinite;
-}
-@keyframes gm-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }
-    70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
-    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-}
-.gm-title {
-    margin: 18px 0 0; font-size: 40px; line-height: 1.08;
-    font-weight: 700; letter-spacing: -0.022em; color: var(--gm-ink);
-}
-.gm-title .gm-accent-text { color: var(--gm-accent); }
-.gm-sub {
-    margin: 14px 0 0; max-width: 660px;
-    font-size: 16px; line-height: 1.6; color: var(--gm-muted);
-}
-.gm-meta { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
-.gm-chip {
-    font-size: 12.5px; font-weight: 500; color: #43465c;
-    background: #f3f4fb; border: 1px solid var(--gm-line);
-    padding: 7px 13px; border-radius: 10px;
-}
-.gm-section {
-    font-size: 12px; font-weight: 600; letter-spacing: 0.11em;
-    text-transform: uppercase; color: var(--gm-muted);
-    margin: 8px 2px 0;
-}
-.gm-card {
-    padding: 20px !important; border-radius: 20px !important;
-    background: #ffffff !important;
-    box-shadow: 0 1px 2px rgba(16,18,28,0.04), 0 10px 30px rgba(16,18,28,0.06) !important;
-}
-.gm-cap { font-size: 13px; font-weight: 600; color: var(--gm-ink); margin: 2px 4px 8px; }
-.gm-plot {
-    background: #ffffff !important; border-radius: 16px !important;
-    padding: 8px !important; border: 1px solid var(--gm-line) !important;
-    box-shadow: none !important;
-}
-#gm-analyze {
-    font-weight: 600 !important; letter-spacing: 0.01em;
-    box-shadow: 0 6px 18px rgba(99,102,241,0.28) !important;
-}
-#gm-verdict { min-height: 240px; }
-#gm-verdict .output-class, #gm-verdict .label-name { color: var(--gm-ink) !important; }
-.gm-method { font-size: 14px; line-height: 1.65; color: #43465c; }
-.gm-method code { background: #f3f4fb; padding: 1px 6px; border-radius: 6px; font-size: 12.5px; }
-footer { display: none !important; }
-.gm-foot {
-    text-align: center; color: var(--gm-muted);
-    font-size: 13px; padding: 26px 0 4px;
-}
-.gm-foot a { color: var(--gm-accent); text-decoration: none; }
-@media (max-width: 760px) {
-    .gm-header { padding: 30px 24px; }
-    .gm-title { font-size: 30px; }
-}
-"""
-
-HEADER_HTML = """
-<div class="gm-header">
-  <span class="gm-eyebrow"><span class="gm-dot"></span>Speech Emotion Recognition</span>
-  <h1 class="gm-title">Good&nbsp;Mood <span class="gm-accent-text">·</span> Acoustic Emotion Lab</h1>
-  <p class="gm-sub">
-    Record or upload a short speech clip. The model renders its MEL
-    spectrogram and a fine-tuned <b>ResNet-18</b> reads the emotional
-    fingerprint of the voice &mdash; alongside the waveform, the time&ndash;
-    frequency heatmap it actually sees, and the full probability distribution
-    across all seven classes.
-  </p>
-  <div class="gm-meta">
-    <span class="gm-chip">ResNet-18 &middot; ONNX Runtime</span>
-    <span class="gm-chip">MEL spectrogram &middot; 224&times;224</span>
-    <span class="gm-chip">EMO-DB &middot; German emotional speech</span>
-    <span class="gm-chip">7 emotion classes</span>
+HERO_HTML = """
+<div class="gm-hero">
+  <div class="gm-hero-title">🎙️ Good Mood — Acoustic Emotion Lab</div>
+  <div class="gm-hero-sub">
+    Record or upload a short speech clip; a fine-tuned <b>ResNet-18</b> reads the
+    emotion from its <b>MEL spectrogram</b>, with the waveform, the time–frequency
+    heatmap it sees, and the full probability distribution.
+  </div>
+  <div class="gm-badges">
+    <span class="gm-badge gm-badge-accent">2020 · built for a job application</span>
+    <span class="gm-badge">Berlin EMO-DB</span>
+    <span class="gm-badge">7 emotions</span>
+    <span class="gm-badge">ONNX · no CUDA</span>
   </div>
 </div>
 """
 
-METHOD_HTML = """
-<div class="gm-method">
-  <b>How it works.</b> The waveform is converted to a 128-band <b>MEL
-  spectrogram</b> via short-time Fourier transform, scaled to decibels
-  (<code>power_to_db</code>), and rendered to a 224&times;224 image &mdash; the
-  exact tensor the network sees. A <b>ResNet-18</b> fine-tuned on Berlin EMO-DB
-  classifies it into 7 emotions. The same spectrogram code runs at train and
-  serve time, so there is <b>zero train/serve skew</b>; inference uses
-  <b>ONNX Runtime</b> (CPU) &mdash; no PyTorch, no CUDA.
+STATS_HTML = """
+<div class="gm-stats">
+  <div class="gm-stat"><div class="gm-stat-num">85.2%</div><div class="gm-stat-lab">Test accuracy</div></div>
+  <div class="gm-stat"><div class="gm-stat-num">0.85</div><div class="gm-stat-lab">Macro-F1</div></div>
+  <div class="gm-stat"><div class="gm-stat-num">7</div><div class="gm-stat-lab">Emotion classes</div></div>
+  <div class="gm-stat"><div class="gm-stat-num">ResNet-18</div><div class="gm-stat-lab">Backbone</div></div>
+  <div class="gm-stat"><div class="gm-stat-num">ONNX · CPU</div><div class="gm-stat-lab">Inference</div></div>
 </div>
+"""
+
+METHOD_MD = """
+**How it works.** The waveform is converted to a 128-band **MEL spectrogram**
+(short-time Fourier transform → decibels) and rendered to a 224×224 image — the
+exact tensor the network sees. A **ResNet-18** fine-tuned on the Berlin EMO-DB
+corpus classifies it into 7 emotions. The spectrogram code is shared between
+training and serving (**zero train/serve skew**), and inference runs on **ONNX
+Runtime** (CPU) — no PyTorch, no CUDA.
+
+*A 2020 portfolio project, modernized: PyTorch → ONNX, packaged with `uv`, and
+deployed here as a Gradio Space.*
+"""
+
+CSS = """
+.gm-hero {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4f46e5 100%);
+  color: #fff; padding: 34px 38px; border-radius: 18px; margin: 4px 0 16px;
+}
+.gm-hero-title { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+.gm-hero-sub { margin-top: 10px; max-width: 760px; font-size: 15px; line-height: 1.6; color: #c7d2fe; }
+.gm-hero-sub b { color: #eef2ff; }
+.gm-badges { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.gm-badge {
+  background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.20);
+  color: #e0e7ff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+}
+.gm-badge-accent { background: #facc15; border-color: #facc15; color: #422006; }
+
+.gm-stats { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.gm-stat {
+  flex: 1; min-width: 130px; padding: 16px 18px; border-radius: 14px;
+  background: var(--block-background-fill);
+  border: 1px solid var(--border-color-primary);
+}
+.gm-stat-num { font-size: 22px; font-weight: 800; color: #4f46e5; }
+.gm-stat-lab {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--body-text-color-subdued); margin-top: 4px;
+}
+footer { display: none !important; }
 """
 
 
 # --- UI ----------------------------------------------------------------------
 
 with gr.Blocks(
-    theme=theme, css=CSS, title="Good Mood — Acoustic Emotion Lab", fill_width=False
+    theme=gr.themes.Soft(primary_hue="indigo"),
+    css=CSS,
+    title="Good Mood — Acoustic Emotion Lab",
 ) as demo:
-    gr.HTML(HEADER_HTML)
+    gr.HTML(HERO_HTML)
+    gr.HTML(STATS_HTML)
 
     with gr.Row(equal_height=False):
-        # Left: input + verdict
-        with gr.Column(scale=5, min_width=330):
-            gr.HTML('<div class="gm-section">01 · Input signal</div>')
-            with gr.Group(elem_classes="gm-card"):
-                audio_in = gr.Audio(
-                    value=DEFAULT_SAMPLE,
-                    sources=["microphone", "upload"],
-                    type="filepath",
-                    label="Record or upload speech",
-                    waveform_options=gr.WaveformOptions(
-                        waveform_color="#c7cbf5",
-                        waveform_progress_color="#6366f1",
-                        show_controls=True,
-                    ),
-                )
-                with gr.Row():
-                    clear_btn = gr.ClearButton(value="Clear", scale=1)
-                    analyze_btn = gr.Button(
-                        "Analyze emotion",
-                        variant="primary",
-                        size="lg",
-                        elem_id="gm-analyze",
-                        scale=2,
-                    )
-
-            gr.HTML('<div class="gm-section">02 · Predicted emotion</div>')
-            with gr.Group(elem_classes="gm-card"):
-                verdict = gr.Label(
-                    num_top_classes=7,
-                    label="Affect probabilities",
-                    show_heading=True,
-                    elem_id="gm-verdict",
-                )
-
+        with gr.Column(scale=4):
+            audio_in = gr.Audio(
+                value=DEFAULT_SAMPLE,
+                sources=["microphone", "upload"],
+                type="filepath",
+                label="🎤 Record or upload speech",
+            )
+            with gr.Row():
+                clear_btn = gr.ClearButton(value="Clear")
+                analyze_btn = gr.Button("Analyze emotion", variant="primary", size="lg")
+            verdict = gr.Label(num_top_classes=7, label="Predicted emotion")
             if EXAMPLES:
-                gr.HTML('<div class="gm-section">Try a sample (EMO-DB)</div>')
                 gr.Examples(
-                    examples=EXAMPLES, inputs=audio_in, label="", examples_per_page=4
+                    examples=EXAMPLES,
+                    inputs=audio_in,
+                    label="Try a sample (EMO-DB)",
+                    examples_per_page=4,
                 )
+            with gr.Accordion("How it works", open=False):
+                gr.Markdown(METHOD_MD)
 
-            with gr.Accordion("Method", open=False):
-                gr.HTML(METHOD_HTML)
-
-        # Right: scientific visualization grid
-        with gr.Column(scale=7, min_width=420):
-            gr.HTML('<div class="gm-section">03 · Spectral analysis</div>')
-            with gr.Group(elem_classes="gm-card"):
-                gr.HTML(
-                    '<div class="gm-cap">MEL spectrogram &middot; what the model actually sees (dB)</div>'
-                )
-                mel_plot = gr.Plot(
-                    label="MEL spectrogram", show_label=False, elem_classes="gm-plot"
-                )
-
-            with gr.Row(equal_height=True):
-                with gr.Column(min_width=200):
-                    with gr.Group(elem_classes="gm-card"):
-                        gr.HTML(
-                            '<div class="gm-cap">Waveform &middot; amplitude vs time</div>'
-                        )
-                        wave_plot = gr.Plot(
-                            label="Waveform", show_label=False, elem_classes="gm-plot"
-                        )
-                with gr.Column(min_width=200):
-                    with gr.Group(elem_classes="gm-card"):
-                        gr.HTML(
-                            '<div class="gm-cap">Class probability distribution</div>'
-                        )
-                        prob_plot = gr.Plot(
-                            label="Probabilities",
-                            show_label=False,
-                            elem_classes="gm-plot",
-                        )
-
-    gr.HTML(
-        '<div class="gm-foot">Fine-tuned ResNet-18 on the Berlin EMO-DB corpus '
-        "&middot; ONNX Runtime &middot; shared spectrogram pipeline for zero skew</div>"
-    )
+        with gr.Column(scale=6):
+            mel_plot = gr.Plot(label="MEL spectrogram — what the model sees")
+            with gr.Row():
+                wave_plot = gr.Plot(label="Waveform")
+                prob_plot = gr.Plot(label="Class probabilities")
 
     outputs = [verdict, wave_plot, mel_plot, prob_plot]
     analyze_btn.click(fn=analyze, inputs=audio_in, outputs=outputs)
     clear_btn.add([audio_in, verdict, wave_plot, mel_plot, prob_plot])
-
-    # Render a full result on first page load so nothing looks empty/broken.
     if DEFAULT_SAMPLE:
         demo.load(fn=analyze, inputs=audio_in, outputs=outputs)
 
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(ssr_mode=False)
