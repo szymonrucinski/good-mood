@@ -1,4 +1,5 @@
 """EMO-DB preprocessing: parse labels, render MEL spectrograms, Dataset."""
+
 from __future__ import annotations
 
 import os
@@ -15,12 +16,12 @@ from utils.core import EMOTIONS, audio_to_mel_image
 # EMO-DB encodes the emotion in the 6th filename character (index 5), e.g.
 # "03a01Wa.wav" -> 'W'. German emotion -> our English class label.
 EMODB_CODE_TO_EMOTION = {
-    "W": "angry",    # Wut (anger)
-    "L": "bored",    # Langeweile (boredom)
+    "W": "angry",  # Wut (anger)
+    "L": "bored",  # Langeweile (boredom)
     "E": "disgust",  # Ekel (disgust)
-    "A": "fear",     # Angst (fear)
-    "F": "happy",    # Freude (happiness)
-    "T": "sad",      # Trauer (sadness)
+    "A": "fear",  # Angst (fear)
+    "F": "happy",  # Freude (happiness)
+    "T": "sad",  # Trauer (sadness)
     "N": "neutral",  # Neutral
 }
 

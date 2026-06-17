@@ -6,6 +6,7 @@ The Gradio UI is mounted at "/", a JSON health check at "/health".
 Inference uses the EXACT same spectrogram + transforms as training
 (utils.core), so there is no train/serve skew.
 """
+
 from __future__ import annotations
 
 import logging
@@ -68,8 +69,7 @@ def predict(file_path: str) -> dict:
         raise gr.Error(f"Could not process audio: {exc}")
 
     return {
-        EMOTION_DISPLAY.get(cls, cls): float(probs[i])
-        for i, cls in enumerate(CLASSES)
+        EMOTION_DISPLAY.get(cls, cls): float(probs[i]) for i, cls in enumerate(CLASSES)
     }
 
 

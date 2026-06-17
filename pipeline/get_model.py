@@ -5,6 +5,7 @@
 Downloads from MODEL_REPO (default szymonrucinski/good-mood-emotion). The repo is
 public, so no token is required.
 """
+
 from __future__ import annotations
 
 import logging

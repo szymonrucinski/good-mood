@@ -1,4 +1,5 @@
 """Backwards-compatible helpers; real logic lives in utils.core."""
+
 from __future__ import annotations
 
 import io

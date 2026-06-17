@@ -1,4 +1,5 @@
 """Evaluation metrics: accuracy, loss, confusion matrix, error analysis."""
+
 from __future__ import annotations
 
 from typing import List
@@ -38,9 +39,7 @@ def error_analysis(loader, model, classes: List[str], device) -> pd.DataFrame:
     all_preds = np.concatenate(preds)
     all_trues = np.concatenate(trues)
     decode = np.array(classes)
-    return pd.DataFrame(
-        {"expected": decode[all_trues], "predicted": decode[all_preds]}
-    )
+    return pd.DataFrame({"expected": decode[all_trues], "predicted": decode[all_preds]})
 
 
 def classification_summary(df: pd.DataFrame, classes: List[str]) -> str:

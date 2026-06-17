@@ -6,6 +6,7 @@ Run from the repo root:
 Pipeline: EMO-DB wav -> MEL spectrogram PNGs -> ResNet18 transfer learning.
 Everything is seeded; the best model (lowest val loss) is checkpointed.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -129,7 +130,11 @@ def train(args) -> None:
         scheduler.step(val_loss)
         log.info(
             "epoch %02d/%d | train_loss %.4f | val_loss %.4f | val_acc %.3f",
-            epoch, args.epochs, train_loss, val_loss, val_acc,
+            epoch,
+            args.epochs,
+            train_loss,
+            val_loss,
+            val_acc,
         )
         stopper(val_loss, model)
         if stopper.early_stop:
@@ -144,7 +149,9 @@ def train(args) -> None:
     log.info("BEST MODEL | test_loss %.4f | test_acc %.3f", test_loss, test_acc)
 
     err = scoring.error_analysis(test_loader, best_model, EMOTIONS, device)
-    log.info("classification report:\n%s", scoring.classification_summary(err, EMOTIONS))
+    log.info(
+        "classification report:\n%s", scoring.classification_summary(err, EMOTIONS)
+    )
     log.info("saved best model -> %s", out_path)
 
 

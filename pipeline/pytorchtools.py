@@ -1,4 +1,5 @@
 """Early stopping that checkpoints the best model as a portable dict."""
+
 from __future__ import annotations
 
 import numpy as np

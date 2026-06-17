@@ -1,7 +1,8 @@
 """Download the EMO-DB dataset into data/raw/.
 
-    uv run python -m pipeline.get_data
+uv run python -m pipeline.get_data
 """
+
 from __future__ import annotations
 
 import logging

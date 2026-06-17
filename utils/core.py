@@ -6,6 +6,7 @@ order are *guaranteed identical* between train and inference. Any divergence
 between training and serving preprocessing silently wrecks accuracy, so it all
 lives in one place.
 """
+
 from __future__ import annotations
 
 import os
@@ -67,6 +68,7 @@ MODEL_FILENAME = "model.pt"
 
 # --- Reproducibility ---------------------------------------------------------
 
+
 def set_seed(seed: int = SEED) -> None:
     """Seed every RNG and make cuDNN deterministic.
 
@@ -99,6 +101,7 @@ def make_generator(seed: int = SEED) -> torch.Generator:
 
 # --- Spectrogram -------------------------------------------------------------
 
+
 def audio_to_mel_image(audio: np.ndarray, sr: int) -> Image.Image:
     """Convert a raw audio waveform to a MEL-spectrogram RGB PIL image.
 
@@ -123,6 +126,7 @@ def audio_to_mel_image(audio: np.ndarray, sr: int) -> Image.Image:
 
 # --- Transforms --------------------------------------------------------------
 
+
 def get_transforms(train: bool) -> T.Compose:
     """Image transforms. Train adds light SpecAugment-style RandomErasing.
 
@@ -141,6 +145,7 @@ def get_transforms(train: bool) -> T.Compose:
 
 
 # --- Model -------------------------------------------------------------------
+
 
 def build_model(num_classes: int = len(EMOTIONS), pretrained: bool = True) -> nn.Module:
     """ResNet18 transfer-learning backbone with a fresh classification head.
