@@ -54,6 +54,9 @@ _EXAMPLE_SPEC = [
 EXAMPLES = [
     [str(EXAMPLES_DIR / f)] for f, _ in _EXAMPLE_SPEC if (EXAMPLES_DIR / f).exists()
 ]
+# Preload one clip so the dashboard renders a full result on first visit
+# (empty plots look broken otherwise).
+DEFAULT_SAMPLE = EXAMPLES[0][0] if EXAMPLES else None
 
 # Load the ONNX model once at startup (downloads from the HF Hub if absent).
 MODEL = None
@@ -266,6 +269,7 @@ with gr.Blocks(
             gr.HTML('<div class="gm-section">01 · Input signal</div>')
             with gr.Group(elem_classes="gm-card"):
                 audio_in = gr.Audio(
+                    value=DEFAULT_SAMPLE,
                     sources=["microphone", "upload"],
                     type="filepath",
                     label="Record or upload speech",
@@ -342,6 +346,10 @@ with gr.Blocks(
     outputs = [verdict, wave_plot, mel_plot, prob_plot]
     analyze_btn.click(fn=analyze, inputs=audio_in, outputs=outputs)
     clear_btn.add([audio_in, verdict, wave_plot, mel_plot, prob_plot])
+
+    # Render a full result on first page load so nothing looks empty/broken.
+    if DEFAULT_SAMPLE:
+        demo.load(fn=analyze, inputs=audio_in, outputs=outputs)
 
 
 if __name__ == "__main__":
